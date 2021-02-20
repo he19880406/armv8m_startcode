@@ -1,55 +1,61 @@
-IMAGE := kernel.elf
+PROJ_DIR := $(shell pwd)
 
-CROSS_COMPILE = armv8l-linux-gnueabihf-
+CROSS_COMPILE := arm-none-eabi-
 
-CC = $(CROSS_COMPILE)gcc
-LD = $(CROSS_COMPILE)ld
-GDB = $(CROSS_COMPILE)gdb
-OBJDUMP = $(CROSS_COMPILE)objdump
-READELF = $(CROSS_COMPILE)readelf
+CC := ${CROSS_COMPILE}gcc
+AS := ${CROSS_COMPILE}gcc -x assembler-with-cpp
+LD := ${CROSS_COMPILE}ld
+OBJCOPY := ${CROSS_COMPILE}objcopy
+OBJDUMP := ${CROSS_COMPILE}objdump
 
-CFLAGS = -mcpu=cortex-m33 -g -nostdlib -nostartfiles -ffreestanding
+APP_NAME := kernel
+APP := ${APP_NAME}.elf
+SRC_DIR := src
+OBJ_DIR := obj
 
-all: $(IMAGE)
+DEBUG_FLAGS = -g
 
-OBJS = main.o
+ARMFLAGS += -mcpu=cortex-m33 -fno-exceptions -fno-unwind-tables
+ASFLAGS += -nostdlib -Werror ${DEBUG_FLAGS} $(ARMFLAGS) ${INCLUDES}
+CFLAGS += -nostdlib -Wall -Werror ${DEBUG_FLAGS} $(ARMFLAGS) ${INCLUDES}
 
-boot.o: boot.s
-	$(CC) -mcpu=cortex-m33 -g -c boot.s -o boot.o
+LDFLAGS += --fatal-warnings -O1 -T kernel.ld
 
-$(IMAGE): kernel.ld boot.o $(OBJS)
-	$(LD) boot.o $(OBJS) -T kernel.ld -o $(IMAGE)
-	$(OBJDUMP) -D $(IMAGE) > kernel.list
-	$(OBJDUMP) -t $(IMAGE) | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
-	$(READELF) -A $(IMAGE)
+DIRS := $(shell find . -maxdepth 5 -type d)
+APP_C_SRC := $(foreach SRC_DIR, $(DIRS),$(wildcard $(SRC_DIR)/*.c))
+APP_C_SRC := $(subst ./,,$(APP_C_SRC))
 
-dumpvmstate:
-	qemu-system-arm -machine mps2-an505 -cpu cortex-m33 \
-	                    -m 1024 \
-			    -nographic -serial mon:stdio \
-	                    -kernel $(IMAGE) \
-			    -dump-vmstate vmstate.json 
+APP_ASM_SRC := $(foreach SRC_DIR, $(DIRS),$(wildcard $(SRC_DIR)/*.s))
+APP_ASM_SRC := $(subst ./,,$(APP_ASM_SRC))
 
-qemu:
-	qemu-system-arm -machine mps2-an505 -cpu cortex-m33 \
-	                    -m 16m \
-			    -nographic \
-	                    -kernel $(IMAGE)
+OBJ_FILES := $(APP_C_SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+OBJ_FILES += $(APP_ASM_SRC:$(SRC_DIR)/%.s=$(OBJ_DIR)/%.o)
+DEP_FILES := $(OBJ_FILES:%=%.d)
 
-gdbserver:
-	qemu-system-arm -machine mps2-an505 -cpu cortex-m33 \
-	                    -m 4096 \
-			    -nographic -serial mon:stdio \
-	                    -kernel $(IMAGE) \
-			    -S -s
-gdb: $(IMAGE)
-	$(GDB) $^ -ex "target remote:1234"
+OBJ_SUB_DIR := $(dir $(OBJ_FILES))
 
+.PHONY: all clean
 
-gdbqemu:
-	gdb --args qemu-system-arm -machine mps2-an505 -cpu cortex-m33  -m 4096  -nographic -serial mon:stdio -kernel kernel.elf
+all: $(APP)
+
+$(APP): $(OBJ_DIR) $(OBJ_FILES)
+	$(LD) $(LDFLAGS) $(OBJ_FILES) -o $@
+	$(OBJCOPY) -O binary $@ ${APP_NAME}.img
+	$(OBJDUMP) -S -D $@ > ${APP_NAME}.dump
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
+	mkdir -p $(OBJ_SUB_DIR)
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.s
+	mkdir -p $(OBJ_SUB_DIR)
+	$(CC) -c $(ASFLAGS) -o $@ $<
+
+$(OBJ_DIR):
+	mkdir -p $@
+
+-include $(DEP_FILES)
 
 clean:
-	rm -f $(IMAGE) *.o *.list *.sym
-
-.PHONY: all qemu clean
+	@echo "CLEAN"
+	rm -rf ${OBJ_DIR} ${APP_NAME}.dump ${APP_NAME}.elf ${APP_NAME}.img

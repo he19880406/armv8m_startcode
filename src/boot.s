@@ -79,6 +79,49 @@ Reset_Handler:
                 msr      msplim, r0
 
 /* CMSIS System Initialization */
+                bl       SystemInit
+
+                ldr      r4, =__copy_table_start__
+                ldr      r5, =__copy_table_end__
+
+.L_loop0:
+                cmp      r4, r5
+                bge      .L_loop0_done
+                ldr      r1, [r4]
+                ldr      r2, [r4, #4]
+                ldr      r3, [r4, #8]
+
+.L_loop0_0:
+                subs     r3, #4
+                ittt     ge
+                ldrge    r0, [r1, r3]
+                strge    r0, [r2, r3]
+                bge      .L_loop0_0
+
+                adds     r4, #12
+                b        .L_loop0
+.L_loop0_done:
+
+                ldr      r3, =__zero_table_start__
+                ldr      r4, =__zero_table_end__
+
+.L_loop2:
+                cmp      r3, r4
+                bge      .L_loop2_done
+                ldr      r1, [r3]
+                ldr      r2, [r3, #4]
+                movs     r0, 0
+
+.L_loop2_0:
+                subs     r2, #4
+                itt      ge
+                strge    r0, [r1, r2]
+                bge      .L_loop2_0
+
+                adds     r3, #8
+                b        .L_loop2
+.L_loop2_done:
+
                 bl       main
 
                 .fnend
