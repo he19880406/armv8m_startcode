@@ -4,3 +4,5 @@
 *.bak
 *.sym
 trace*
+*.bin
+*.dump
