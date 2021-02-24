@@ -14,12 +14,15 @@ __STACK_SIZE = 1K;
 
 SECTIONS
 {
+    vectors : {*(.vectors)} > MPC_ROM_EFLASH0
 
     .text :
     {
-        KEEP(*(.vectors))
         *(.text)
+        *(.rodata)
+        *(.rodata*)
     } > MPC_ROM_EFLASH0
+    __text_end = .;
 
     .data :
     {
