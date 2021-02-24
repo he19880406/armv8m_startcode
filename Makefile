@@ -1,6 +1,7 @@
 PROJ_DIR := $(shell pwd)
 
-CROSS_COMPILE := arm-none-eabi-
+CROSS_COMPILE := armv8l-linux-gnueabihf-
+#CROSS_COMPILE := arm-none-eabi-
 
 CC := ${CROSS_COMPILE}gcc
 AS := ${CROSS_COMPILE}gcc -x assembler-with-cpp

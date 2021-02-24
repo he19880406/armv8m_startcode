@@ -1,10 +1,10 @@
 /* Linker script to configure memory regions. */
 MEMORY
 {
-   NS_ZBTRAM (rx) : ORIGIN = 0x00000000, LENGTH = 0x00400000
-   /* S_ZBTRAM (rx) : ORIGIN = 0x10000000, LENGTH = 32k */
-   NS_RAM (rwx) : ORIGIN = 0x28000000, LENGTH = 0x00200000
-   /*S_RAM (rwx) : ORIGIN = 0x30000000, LENGTH = 32k */
+   MPC_ROM_QSPI (rx) : ORIGIN = 0x00000000, LENGTH = 0x02000000
+   MPC_SRAM (rwx) : ORIGIN = 0x0a400000, LENGTH = 0x00080000
+   MPC_ROM_EFLASH0 (rx) : ORIGIN = 0x0a000000, LENGTH = 0x00200000
+   MPC_ROM_EFLASH1 (rx) : ORIGIN = 0x0a200000, LENGTH = 0x00200000
 }
 
 /* Entry Point */
@@ -19,7 +19,7 @@ SECTIONS
     {
         KEEP(*(.vectors))
         *(.text)
-    } > NS_ZBTRAM
+    } > MPC_ROM_EFLASH0
 
     .data :
     {
@@ -27,7 +27,7 @@ SECTIONS
         __data_begin = .;
         *(.data)
         __data_end = .;
-    } > NS_RAM AT > NS_ZBTRAM
+    } > MPC_SRAM AT > MPC_ROM_EFLASH0
 
     .bss :
     {
@@ -35,7 +35,7 @@ SECTIONS
         __bss_begin = .;
         *(.bss)
         __bss_end = .;
-    } > NS_RAM
+    } > MPC_SRAM
 
     .stack :
     {
@@ -44,7 +44,5 @@ SECTIONS
         . = . + __STACK_SIZE;
         . = ALIGN(8);
         __StackTop = .;
-    } > NS_RAM
+    } > MPC_SRAM
 }
-
-
