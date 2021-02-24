@@ -72,34 +72,24 @@ __Vectors_End:
                 .thumb_func
                 .type    Reset_Handler, %function
                 .globl   Reset_Handler
-                .fnstart
 Reset_Handler:
                 ldr      r0, =main
                 bx       r0
-
-                .fnend
-                .size    Reset_Handler, . - Reset_Handler
 
 /* The default macro is not used for HardFault_Handler
  * because this results in a poor debug illusion.
  */
                 .thumb_func
                 .type    HardFault_Handler, %function
-                .weak    HardFault_Handler
-                .fnstart
+                .globl    HardFault_Handler
 HardFault_Handler:
                 b        .
-                .fnend
-                .size    HardFault_Handler, . - HardFault_Handler
 
                 .thumb_func
                 .type    Default_Handler, %function
                 .weak    Default_Handler
-                .fnstart
 Default_Handler:
                 b        .
-                .fnend
-                .size    Default_Handler, . - Default_Handler
 
 /* Macro to define default exception/interrupt handlers.
  * Default handler are weak symbols with an endless loop.
