@@ -1,10 +1,9 @@
 PROJ_DIR := $(shell pwd)
 
-CROSS_COMPILE := armv8l-linux-gnueabihf-
-#CROSS_COMPILE := arm-none-eabi-
+CROSS_COMPILE := arm-none-eabi-
 
 CC := ${CROSS_COMPILE}gcc
-AS := ${CROSS_COMPILE}gcc -x assembler-with-cpp
+AS := ${CROSS_COMPILE}as
 LD := ${CROSS_COMPILE}ld
 OBJCOPY := ${CROSS_COMPILE}objcopy
 OBJDUMP := ${CROSS_COMPILE}objdump
@@ -16,11 +15,11 @@ OBJ_DIR := obj
 
 DEBUG_FLAGS = -g
 
-ARMFLAGS += -mcpu=cortex-m33
-ASFLAGS += -nostdlib -Werror ${DEBUG_FLAGS} $(ARMFLAGS) ${INCLUDES}
-CFLAGS += -nostdlib -Wall -Werror ${DEBUG_FLAGS} $(ARMFLAGS) ${INCLUDES}
+ARMFLAGS += -mcpu=cortex-m33 -mthumb
+ASFLAGS += -Werror ${DEBUG_FLAGS} $(ARMFLAGS) ${INCLUDES}
+CFLAGS += -Wall -Werror ${DEBUG_FLAGS} $(ARMFLAGS) ${INCLUDES}
 
-LDFLAGS += --fatal-warnings -O1 -T kernel.ld
+LDFLAGS += -nostdlib -nostartfiles --fatal-warnings -T kernel.ld
 
 DIRS := $(shell find . -maxdepth 5 -type d)
 APP_C_SRC := $(foreach SRC_DIR, $(DIRS),$(wildcard $(SRC_DIR)/*.c))
